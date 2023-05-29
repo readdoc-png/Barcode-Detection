@@ -69,11 +69,19 @@ class ShowImage(QMainWindow, Ui_MainWindow):
         while True:
             _, frame = self.cap.read()  # Read camera frame
 
-            # Convert the frame to grayscale
+            # Grayscale conversion
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            # Apply blurring to the grayscale image
-            blurred = cv2.blur(gray, (3, 3))
+            # Calculate gradient using Sobel kernel
+            gradient_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+            gradient_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+
+            # Combine x and y gradients to get magnitude and angle
+            gradient = cv2.subtract(gradient_x, gradient_y)
+            gradient = cv2.convertScaleAbs(gradient)
+
+            # Apply blurring to the gradient image
+            blurred = cv2.blur(gradient, (3, 3))
 
             # Display the blurred frame
             cv2.imshow('Blurred', blurred)
@@ -89,11 +97,11 @@ class ShowImage(QMainWindow, Ui_MainWindow):
         while True:
             _, frame = self.cap.read()  # Read camera frame
 
-            # Convert the frame to grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            blurred = cv2.blur(gray, (3, 3))
 
             # Apply binary thresholding with intensity threshold of 225
-            _, binary = cv2.threshold(gray, 225, 255, cv2.THRESH_BINARY)
+            _, binary = cv2.threshold(blurred, 225, 255, cv2.THRESH_BINARY)
 
             # Display the binary thresholded frame
             cv2.imshow('Binary Threshold', binary)
@@ -109,20 +117,16 @@ class ShowImage(QMainWindow, Ui_MainWindow):
         while True:
             _, frame = self.cap.read()  # Read camera frame
 
-            # Convert the frame to grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            blurred = cv2.blur(gray, (3, 3))
 
-            # Apply binary thresholding with intensity threshold of 225
-            _, binary = cv2.threshold(gray, 225, 255, cv2.THRESH_BINARY)
+            _, thresh = cv2.threshold(blurred, 225, 255, cv2.THRESH_BINARY)
 
-            # Create a 21x7 structuring element for morphology
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
-
-            # Apply morphology operation
-            result = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+            closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
             # Display the morphology result
-            cv2.imshow('Morphology', result)
+            cv2.imshow('Morphology', closed)
 
             key = cv2.waitKey(1)  # Prevent window from closing
             if key == 27:  # Press ESC to stop
@@ -135,18 +139,17 @@ class ShowImage(QMainWindow, Ui_MainWindow):
         while True:
             _, frame = self.cap.read()  # Read camera frame
 
-            # Convert the frame to grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            blurred = cv2.blur(gray, (3, 3))
 
-            # Apply binary thresholding with intensity threshold of 225
-            _, binary = cv2.threshold(gray, 225, 255, cv2.THRESH_BINARY)
+            _, thresh = cv2.threshold(blurred, 225, 255, cv2.THRESH_BINARY)
 
-            # Create a 21x7 structuring element for morphology
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
+            closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
             # Apply erosion and dilation operations
-            eroded = cv2.erode(binary, kernel, iterations=4)
-            dilated = cv2.dilate(eroded, kernel, iterations=4)
+            eroded = cv2.erode(closed, None, iterations=4)
+            dilated = cv2.dilate(eroded, None, iterations=4)
 
             # Display the eroded and dilated result
             cv2.imshow('Erosion and Dilation', dilated)
@@ -215,8 +218,9 @@ class ShowImage(QMainWindow, Ui_MainWindow):
         self.cap.release()
         cv2.destroyAllWindows()
 
+
 app = QtWidgets.QApplication(sys.argv)
 window = ShowImage()
-window.setWindowTitle('Project')
+window.setWindowTitle('Project Akhir')
 window.show()
 sys.exit(app.exec_())
